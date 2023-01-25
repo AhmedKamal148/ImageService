@@ -42,26 +42,27 @@ class ImageService
     public function setFieldName($fieldNameFromRequest): static
     {
         $this->fieldNameFromRequest = $fieldNameFromRequest;
-
         return $this;
     }
 
+
+    /**
+     * @throws ValidationException
+     */
     public function updateImage($requestImage, $path, $modelImage): string
     {
-
         if ($this->isRequestDataValid($requestImage, $modelImage) && $this->deleteImage($modelImage, $path)) {
 
             return $this->storeImage($requestImage, $path);
 
         } else {
-            throw ValidationException::withMessages([$this->fieldNameFromRequest => 'The Model Image Doen\'t Found At Model Directory']);
+            throw ValidationException::withMessages([$this->fieldNameFromRequest => 'The Model Image Doesn\'t Found At Model Directory']);
         }
 
     }
 
     public function deleteImage($image, $path): bool
     {
-
         if ($this->isImageExistInModelDirectory($image, $path)) {
 
             return $this->unLinkImage($image, $path);
@@ -70,13 +71,6 @@ class ImageService
         }
     }
 
-    private function isRequestDataValid($image, $modelImage): bool
-    {
-        return $this->isImageNotNull($image)
-            && $this->isImageNotNull($modelImage)
-            && $this->isImage($image)
-            && $this->isImage($modelImage);
-    }
 
     private function isImageExistInModelDirectory($image, $path): bool
     {
@@ -93,6 +87,11 @@ class ImageService
         return unlink($this->getImagePath($image, $path));
     }
 
+    private function isRequestDataValid($image, $modelImage): bool
+    {
+        return $this->checkIsImageValid($image) && $this->checkIsImageValid($modelImage);
+    }
+
     private function checkIsImageValid($image): bool
     {
         return $this->isImage($image) && $this->isImageNotNull($image);
@@ -104,20 +103,31 @@ class ImageService
     }
 
 
-    private function isImage($image): bool
+    public function isImage(mixed $image): bool
     {
-        return in_array($this->getImageExtension($image), $this->imageExtensions());
+        if (is_file($image)) {
+            return in_array($this->getRequestImageExtension($image), $this->imageExtensions());
+        } else {
+            return in_array($this->getModelImageExtension($image), $this->imageExtensions());
+        }
     }
 
-    private function getImageExtension($image): string
-    {
-        return $image->getClientOriginalExtension();
-    }
 
     private function imageExtensions(): array
     {
         return ['jpg', 'jpeg', 'png', 'webp'];
     }
 
+
+    private function getRequestImageExtension($image): string
+    {
+        return $image->getClientOriginalExtension();
+    }
+
+    private function getModelImageExtension($modelImage): string
+    {
+        $extension = substr($modelImage, -4);
+        return trim($extension, '.');
+    }
 
 }
