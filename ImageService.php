@@ -15,7 +15,7 @@ class ImageService
      */
     public function storeImage($image, $path): string
     {
-        if ( $this->checkIsImageValid($image) ) {
+        if ($this->checkIsImageValid($image)) {
 
             $imageName = $this->getImageName($image, $path);
 
@@ -48,7 +48,8 @@ class ImageService
 
     public function updateImage($requestImage, $path, $modelImage): string
     {
-        if ( $this->deleteImage($modelImage, $path) ) {
+
+        if ($this->isRequestDataValid($requestImage, $modelImage) && $this->deleteImage($modelImage, $path)) {
 
             return $this->storeImage($requestImage, $path);
 
@@ -60,16 +61,25 @@ class ImageService
 
     public function deleteImage($image, $path): bool
     {
-        if ( $this->isImageExistInModelDirectory($image, $path) ) {
+
+        if ($this->isImageExistInModelDirectory($image, $path)) {
+
             return $this->unLinkImage($image, $path);
         } else {
             throw ValidationException::withMessages(['error', 'This Image Is Not Valid']);
         }
     }
 
+    private function isRequestDataValid($image, $modelImage): bool
+    {
+        return $this->isImageNotNull($image)
+            && $this->isImageNotNull($modelImage)
+            && $this->isImage($image)
+            && $this->isImage($modelImage);
+    }
+
     private function isImageExistInModelDirectory($image, $path): bool
     {
-
         return file_exists($this->getImagePath($image, $path));
     }
 
