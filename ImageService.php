@@ -91,10 +91,6 @@ class ImageService
     }
 
 
-//    private function isRequestDataValid($image, $modelImage): bool
-//    {
-//        return $this->checkIsImageValid($image) && $this->checkIsImageValid($modelImage);
-//    }
     private function isRequestDataValid($image): bool
     {
         return $this->checkIsImageValid($image);
@@ -132,17 +128,6 @@ class ImageService
         return trim($extension, '.');
     }
 
-
-
-//    private function isImageNotNull($image): bool
-//    {
-//        return !(is_null($image));
-//    }
-
-
-    /**
-     * @throws ValidationException
-     */
 
 
 
