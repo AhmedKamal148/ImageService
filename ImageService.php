@@ -31,7 +31,7 @@ class ImageService
 
     private function getImageName($image, $path): string
     {
-        return time() . '_' . $path . '.' . $image->getClientOriginalExtension();
+        return (time() + mt_rand(10, 100000) + mt_rand(10, 100000)) . '_' . $path . '.' . $image->getClientOriginalExtension();
     }
 
     private function saveImageToModelDirectory($image, $path, $imageName): void
@@ -49,25 +49,33 @@ class ImageService
     /**
      * @throws ValidationException
      */
-    public function updateImage($requestImage, $path, $modelImage): string
+    public function updateImage($requestImage, $path, $modelImage)
     {
-        if ($this->isRequestDataValid($requestImage, $modelImage) && $this->deleteImage($modelImage, $path)) {
-
+        if ($this->isRequestDataValid($requestImage)) {
+            $this->deleteModelImage($modelImage, $path);
             return $this->storeImage($requestImage, $path);
 
         } else {
-            throw ValidationException::withMessages([$this->fieldNameFromRequest => 'The Model Image Doesn\'t Found At Model Directory']);
+            if (!$this->isImageExistInModelDirectory(basename($modelImage), $path)) {
+                return $this->storeImage($requestImage, $path);
+            }
         }
-
     }
 
-    public function deleteImage($image, $path): bool
+    public function deleteModelImage($modelImage, $path): bool
     {
-        if ($this->isImageExistInModelDirectory($image, $path)) {
+        if (!$this->isImage($modelImage)) {
 
-            return $this->unLinkImage($image, $path);
+            if (is_null($modelImage)) {
+                return true;
+            } elseif (!(is_file($modelImage))) {
+                return true;
+            }
         } else {
-            throw ValidationException::withMessages(['error', 'This Image Is Not Valid']);
+            if (!$this->isImageExistInModelDirectory($modelImage, $path)) {
+                return true;
+            }
+            return unlink($this->getImagePath($modelImage, $path));
         }
     }
 
@@ -79,27 +87,22 @@ class ImageService
 
     private function getImagePath($image, $path): string
     {
-        return public_path('images' . DIRECTORY_SEPARATOR . $path . DIRECTORY_SEPARATOR . $image);
+        return public_path('images' . DIRECTORY_SEPARATOR . $path . DIRECTORY_SEPARATOR . basename($image));
     }
 
-    private function unLinkImage($image, $path): bool
-    {
-        return unlink($this->getImagePath($image, $path));
-    }
 
-    private function isRequestDataValid($image, $modelImage): bool
+//    private function isRequestDataValid($image, $modelImage): bool
+//    {
+//        return $this->checkIsImageValid($image) && $this->checkIsImageValid($modelImage);
+//    }
+    private function isRequestDataValid($image): bool
     {
-        return $this->checkIsImageValid($image) && $this->checkIsImageValid($modelImage);
+        return $this->checkIsImageValid($image);
     }
 
     private function checkIsImageValid($image): bool
     {
-        return $this->isImage($image) && $this->isImageNotNull($image);
-    }
-
-    private function isImageNotNull($image): bool
-    {
-        return !(is_null($image));
+        return $this->isImage($image);
     }
 
 
@@ -112,10 +115,9 @@ class ImageService
         }
     }
 
-
     private function imageExtensions(): array
     {
-        return ['jpg', 'jpeg', 'png', 'webp'];
+        return ['jpg', 'jpeg', 'png', 'webp', 'svg', 'gif'];
     }
 
 
@@ -129,5 +131,19 @@ class ImageService
         $extension = substr($modelImage, -4);
         return trim($extension, '.');
     }
+
+
+
+//    private function isImageNotNull($image): bool
+//    {
+//        return !(is_null($image));
+//    }
+
+
+    /**
+     * @throws ValidationException
+     */
+
+
 
 }
